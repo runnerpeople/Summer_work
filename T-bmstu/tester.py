@@ -10,26 +10,44 @@ from urllib.request import HTTPError
 import subprocess
 import filecmp
 
+
+def error_and_right(answer,output):
+    answer_file=open(answer,"r")
+    print("Правильный ответ :",end="")
+    print(answer_file.readlines())
+    answer_file.close()
+    output_file=open(output,"r")
+    print("Полученный ответ :",end="")
+    print(output_file.readlines())
+    output_file.close()
+    return None
+
 def test_program(event):
-    magic_url = urllib.request.urlopen(test_url_const).readline().decode()
-    magic_lines = urllib.request.urlopen(test_url_const).read().decode().splitlines()
-    magic_url=magic_url.replace("T-BMSTU",t_bmstu_ip.get())
-    program=file_path.get()[file_path.get().rfind("/")+1:]
-    program=program[:program.find(".")]
-    test_string=""
-    for s in filter (lambda x: program in x, magic_lines):
-        test_string = s
-    if test_string == "":
-        messagebox.showinfo("Error", "Возникла неизвестная ошибка\nУкажите правильное имя\n"
-                                     "или введите ссылку на тесты")
+    global test_url
+    if test_url.get()!="":
+        magic_url=test_url.get()
     else:
-        test_string=test_string.split(";")[1:]
-        print(test_string)
-        magic_url=magic_url.replace("AAA",test_string[2])
-        magic_url=magic_url.replace("BBB",test_string[1])
-        magic_url=magic_url.replace("CCC",test_string[0])
-        magic_url=magic_url.replace("\n","")
-    print(magic_url)
+        try:
+            magic_url = urllib.request.urlopen(test_url_const).readline().decode()
+            magic_lines = urllib.request.urlopen(test_url_const).read().decode().splitlines()
+            magic_url=magic_url.replace("T-BMSTU",t_bmstu_ip.get())
+            program=file_path.get()[file_path.get().rfind("/")+1:]
+            program=program[:program.find(".")]
+            test_string=""
+            for s in filter (lambda x: program in x, magic_lines):
+                test_string = s
+            if test_string == "":
+                messagebox.showinfo("Error", "Возникла неизвестная ошибка\nУкажите правильное имя\n"
+                                            "или введите ссылку на тесты")
+            else:
+                test_string=test_string.split(";")[1:]
+                magic_url=magic_url.replace("AAA",test_string[2])
+                magic_url=magic_url.replace("BBB",test_string[1])
+                magic_url=magic_url.replace("CCC",test_string[0])
+                magic_url=magic_url.replace("\n","")
+        except HTTPError as e:
+            messagebox.showinfo("Test", "Неизвестная ошибка про попытке к github.com")
+            print(e.reason)
     test_number = 1
     while True:
         try:
@@ -53,37 +71,65 @@ def test_program(event):
         if language_choose.get()==0 or language_choose.get()==1:
             command = "valgrind -q ./a.out <test.txt"
         if language_choose.get()==2:
-            command = "java " + file_path.get()[file_path.get().rfind("/")+1:] + " " + "<test.txt"
+            os.system("cd " + os.getcwd())
+            command = "java -cp " + os.getcwd() + " " + file_path.get()[file_path.get().rfind("/")+1:file_path.get().rfind(".")] + " " + "<test.txt"
         if language_choose.get()==3 or language_choose.get()==5:
             command = language_string.get()
         if language_choose.get()==4 or language_choose.get()==6:
             messagebox.showinfo("Test","Временно возникли проблемы")
+            break
+        # time_limit
+        try:
+            process_ = subprocess.call(command,timeout=5,stderr=subprocess.PIPE,stdout=subprocess.PIPE,shell=True)
+        except subprocess.TimeoutExpired:
+            messagebox.showerror("Test", "Превышен лимит по времени:\nограничение -- 10 с\n в тесте №" + str(test_number))
             break
         process = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
         output, error = process.communicate()
         output = output.decode()
         error = error.decode()
         if error != "" and language_choose.get()==0 or language_choose.get()==1:
-            messagebox.showerror("Test", "valgrind показывает ошибки в тесте" + str(test_number))
+            messagebox.showerror("Test", "valgrind показывает ошибки в тесте " + str(test_number))
             print(error)
+            break
         elif error != "":
-            messagebox.showerror("Test", "Неизвестная ошибка" + str(test_number))
+            messagebox.showerror("Test", "Неизвестная ошибка в тесте " + str(test_number))
             print(error)
+            break
         output_file = open("output.txt", "w")
         output_file.write(output)
         output_file.close()
         if filecmp.cmp("answer.txt","output.txt") == False:
-            messagebox.showerror("Test", "Неправильный ответ для теста №" + str(test_number))
+            messagebox.showerror("Test", "Неправильный ответ для теста № " + str(test_number))
+            error_and_right("answer.txt","output.txt")
             break
         test_number +=1
 
-
 def compile_program(event):
+    magic_lines = urllib.request.urlopen(test_url_const).read().decode().splitlines()
+    program=file_path.get()[file_path.get().rfind("/")+1:]
+    program=program[:program.find(".")]
+    test_string=""
+    for s in filter (lambda x: program in x, magic_lines):
+        test_string = s
+    if test_string == "":
+        messagebox.showinfo("Error", "Возникла неизвестная ошибка\nУкажите правильное имя\n")
+    test_string=test_string.split(";")[1:]
+    file_flag = False
+    args_flag = False
+    if test_string[5].find("+")!=-1:
+        file_flag = True
+    elif test_string[4].find("+")!=-1:
+        args_flag = True
     if compile_string.get().find("javac")!=-1:
         os.system("cp " + file_path.get() + " " + file_path.get()[file_path.get().rfind("/")+1:])
+        os.system("cd " + os.getcwd())
         language_string.set("javac " + file_path.get()[file_path.get().rfind("/")+1:])
     if compile_string.get().find("python3")!=-1 or compile_string.get().find("ruby")!=-1:
         messagebox.showinfo("Compile", "Компиляция не нужна для выбранного языка")
+        return None
+    if file_flag:
+        messagebox.showinfo("Compile", "Компиляция и тестирование программы\n выполняется непосредственно при тесте программы")
         return None
     process = subprocess.Popen(compile_string.get(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
     output, error = process.communicate()
