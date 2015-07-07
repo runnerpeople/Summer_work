@@ -62,7 +62,7 @@ Number;File_name;Language;Subject;Language_allow;Args_Mode;File_mode;
 60;08-minimum;module1;informatics.3;Scheme;-;-;
 61;09-lists;module1;informatics.3;Scheme;-;-;
 62;10-sets;module1;informatics.3;Scheme;-;-;
-63;11-string;module1;informatics.3;Scheme;-;-;
+63;11-strings;module1;informatics.3;Scheme;-;-;
 64;12-pack-unpack;module1;informatics.3;Scheme;-;-;
 65;13-sort;module1;informatics.3;Scheme;-;-;
 66;14-path;module1;informatics.3;Scheme;-;-;
