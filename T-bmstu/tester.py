@@ -45,8 +45,11 @@ def test_program(event):
             magic_url=magic_url.replace("T-BMSTU",t_bmstu_ip.get())
             program=file_path.get()[file_path.get().rfind("/")+1:]
             program=program[:program.find(".")]
+            program_low = program.lower()
             test_string=""
             for s in filter (lambda x: program in x, magic_lines):
+                test_string = s
+            for s in filter (lambda x: program_low in x, magic_lines):
                 test_string = s
             if test_string == "":
                 messagebox.showinfo("Error", "Возникла неизвестная ошибка\nУкажите правильное имя\n"
@@ -79,10 +82,55 @@ def test_program(event):
                     answer_url = magic_url + str(test_number) +".exact.a"
                 else:
                     answer_url = magic_url + str(test_number) +".a"
+            elif file_flag==True and language_choose.get()==2:
+                if (test_string[5].find("++")!=-1 and program!="SparseSet") or test_number!=1:
+                    if test_string[5].find("+++")!=-1:
+                        hintable = magic_url + "Hintable.java"
+                        header2 = urllib.request.urlopen(hintable).read().decode()
+                        with open("Hintable.java",mode="w") as file:
+                            file.write(header2)
+                        stub = magic_url + str(test_number) + ".Stub.java"
+                        header3 = urllib.request.urlopen(stub).read().decode()
+                        with open("Stub.java",mode="w") as file:
+                            file.write(header3)
+                        assert_java = magic_url + str(test_number) + ".Assert.java"
+                        header = urllib.request.urlopen(assert_java).read().decode()
+                        with open("Assert.java",mode="w") as file:
+                            file.write(header)
+                    else:
+                        assert_java = magic_url + "Assert.java"
+                        header = urllib.request.urlopen(assert_java).read().decode()
+                        with open("Assert.java",mode="w") as file:
+                            file.write(header)
+                    test_url1 = magic_url + str(test_number) + ".Test" + str(test_number) + ".java"
+                    answer_url = magic_url + str(test_number) + ".a"
+                elif program=="SparseSet":
+                    vertex = magic_url + "1.Vertex.java"
+                    header = urllib.request.urlopen(vertex).read().decode()
+                    with open("Vertex.java",mode="w") as file:
+                        file.write(header)
+                    hintable = magic_url + "Hintable.java"
+                    header2 = urllib.request.urlopen(hintable).read().decode()
+                    with open("Hintable.java",mode="w") as file:
+                        file.write(header2)
+                    test_url1 = magic_url + str(test_number) + ".Test" + str(test_number) + ".java"
+                    answer_url = magic_url + str(test_number) + ".a"
+                else:
+                    test_url1 = magic_url + str(test_number) + ".Test.java"
+                    answer_url = magic_url + str(test_number) + ".a"
+            elif args_flag==True and language_choose.get()==2:
+                test_url1 = magic_url + str(test_number) + ".arg"
+                answer_url = magic_url + str(test_number) +".a"
             else:
                 test_url1 = magic_url + str(test_number)
                 answer_url = test_url1 + ".a"
-            test = urllib.request.urlopen(test_url1).read().decode()
+            try:
+                test = urllib.request.urlopen(test_url1).read().decode()
+            except:
+                test_url1=test_url1.replace("Test1.java","EratostheneSieve.java")
+                test = urllib.request.urlopen(test_url1).read().decode()
+                test_url1=test_url1.replace(".EratostheneSieve.java","")
+                value = urllib.request.urlopen(test_url1).read().decode()
             answer = urllib.request.urlopen(answer_url).read().decode()
         except HTTPError as connection_error:
             code=connection_error.code
@@ -93,8 +141,19 @@ def test_program(event):
                 messagebox.showinfo("Test", "Неизвестная ошибка про попытке к соединению\n" + "Номер теста " + str(test_number))
         if file_flag == False:
             test_file = open("test.txt", "w")
-        else:
+        elif language_choose.get()==0:
             test_file = open("test.c", "w")
+        elif language_choose.get()==2 and test_string[5].find("+++")!=-1:
+            test_file = open("Test" + str(test_number) + ".java", "w")
+        elif language_choose.get()==2 and test_string[5].find("++")!=-1 and (test_number!=1 or program=="SkipList"):
+            test_file = open("Test" + str(test_number) + ".java", "w")
+        elif language_choose.get()==2 and test_string[5].find("++")!=-1:
+            test_file = open("EratostheneSieve.java", "w")
+            test_file2 = open("test.txt","w")
+            test_file2.write(value)
+            test_file2.close()
+        elif language_choose.get()==2:
+            test_file = open("Test.java", "w")
         answer_file = open("answer.txt","w")
         test_file.write(test)
         answer_file.write(answer)
@@ -109,33 +168,62 @@ def test_program(event):
             command = "valgrind -q ./a.out " + test
         elif language_choose.get()==0 or language_choose.get()==1:
             command = "valgrind -q ./a.out <test.txt"
+        elif language_choose.get()==2 and args_flag == True:
+            os.system("cd " + os.getcwd())
+            command = "java -cp " + os.getcwd() + " " + file_path.get()[file_path.get().rfind("/")+1:file_path.get().rfind(".")] + " " + test
+            files=test.split(" ")
+            #urllib.urlretrieve(magic_url + str(test_number) +"." + files[0] + "zip",files[0] + ".zip")
+            #urllib.retrieve(magic_url + str(test_number) +"." + files[1] + "zip",files[1] + ".zip")
+        elif language_choose.get()==2 and file_flag == True:
+            if test_string[5].find("++")!=-1:
+                if program=="SparseSet":
+                    if test_number==1:
+                        command = "javac " + os.getcwd() + "/Test" + str(test_number) + ".java " + os.getcwd() + "/" + program + ".java "
+                        command += os.getcwd() + "/Hintable.java " + os.getcwd() + "/Vertex.java && java -cp " + os.getcwd() + " " + " Test" + str(test_number)
+                    else:
+                        command = "javac " + os.getcwd() + "/Test" + str(test_number) + ".java " + os.getcwd() + "/" + program + ".java "
+                        command += os.getcwd() + "/Hintable.java " + os.getcwd() + "/Assert.java "
+                        command += os.getcwd() + "/Stub.java && java -cp " + os.getcwd() + " " + " Test" + str(test_number)
+                else:
+                    os.system("cd " + os.getcwd())
+                    if test_number!=1 or program=="SkipList":
+                        command = "javac " + os.getcwd() + "/Test" + str(test_number) + ".java " + os.getcwd() + "/" + program + ".java "
+                        command += os.getcwd() + "/Assert.java && java -cp " + os.getcwd() + " " + " Test" + str(test_number)
+                    else:
+                        command = "javac " + os.getcwd() + "/EratostheneSieve.java " + os.getcwd() + "/" + program + ".java "
+                        command += os.getcwd() + "/Assert.java && java -cp " + os.getcwd() + " " + " EratostheneSieve <test.txt"
+            else:
+                os.system("cd " + os.getcwd())
+                command = "javac " + os.getcwd() + "/Test.java " + os.getcwd() + "/" + program + ".java && java -cp " + os.getcwd() + " " + " Test"
         elif language_choose.get()==2:
             os.system("cd " + os.getcwd())
             command = "java -cp " + os.getcwd() + " " + file_path.get()[file_path.get().rfind("/")+1:file_path.get().rfind(".")] + " " + "<test.txt"
         elif language_choose.get()==3 or language_choose.get()==4 or language_choose.get()==5:
-            command = language_string.get()
+            command = language_string.get() + " <test.txt"
         elif language_choose.get()==6:
             messagebox.showinfo("Test","Временно возникли проблемы")
             break
-        # time_limit
         try:
-            process_ = subprocess.call(command,timeout=10,stderr=subprocess.PIPE,stdout=subprocess.PIPE,shell=True)
-        except subprocess.TimeoutExpired:
+            process = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+            output, error = process.communicate(timeout=10)
+            output = output.decode()
+            print(output)
+            error = error.decode()
+        except:
             messagebox.showerror("Test", "Превышен лимит по времени:\nограничение -- 10 с\n в тесте №" + str(test_number))
             break
-        process = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
-        output, error = process.communicate()
-        output = output.decode()
-        error = error.decode()
-        if error != "" and language_choose.get()==0 or language_choose.get()==1:
+        if error != "" and (language_choose.get()==0 or language_choose.get()==1):
             messagebox.showerror("Test", "valgrind показывает ошибки в тесте " + str(test_number))
             print(error)
             break
-        elif error != "":
+        elif error != "" and error.find("-Xlint:unchecked")==-1:
             messagebox.showerror("Test", "Неизвестная ошибка в тесте " + str(test_number))
             print(error)
             break
         output_file = open("output.txt", "w")
+        if language_choose.get()==4:
+            output=output.replace("guile> ","")
+            print(output,end="")
         output_file.write(output)
         output_file.close()
         if compare_files("answer.txt","output.txt") == False:
@@ -150,8 +238,11 @@ def compile_program(event):
     magic_lines = urllib.request.urlopen(test_url_const).read().decode().splitlines()
     program=file_path.get()[file_path.get().rfind("/")+1:]
     program=program[:program.find(".")]
+    program_low = program.lower()
     test_string=""
     for s in filter (lambda x: program in x, magic_lines):
+        test_string = s
+    for s in filter (lambda x: program_low in x, magic_lines):
         test_string = s
     if test_string == "":
         messagebox.showinfo("Error", "Возникла неизвестная ошибка\nУкажите правильное имя\n")
@@ -209,8 +300,7 @@ def compile_string_2():
     elif language_choose.get()==3:
         language_string.set("python3 " + str(file_path.get()) + " ")
     elif language_choose.get()==4:
-        language_string.set("guile-1.8 -l" + str(file_path.get()) + " ")
-        # have some problem #
+        language_string.set("guile-1.8 -l " + str(file_path.get()) + " ")
     elif language_choose.get()==5:
         language_string.set("ruby " + str(file_path.get()) + " ")
     elif language_choose.get()==6:
