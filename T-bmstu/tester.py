@@ -8,6 +8,8 @@ import tkinter.filedialog
 import urllib.request
 from urllib.request import HTTPError
 import subprocess
+import zipfile
+import shutil
 
 def compare_files(answer,output):
     command="diff -wbq " + answer + " " + output
@@ -82,6 +84,36 @@ def test_program(event):
                     answer_url = magic_url + str(test_number) +".exact.a"
                 else:
                     answer_url = magic_url + str(test_number) +".a"
+            elif file_flag==True and language_choose.get()==1:
+                if program=="textstats":
+                    textstats_url = magic_url + "textstats.hpp"
+                    textstats_hpp = urllib.request.urlopen(textstats_url).read().decode()
+                    with open("textstats.hpp",mode="w") as file:
+                        file.write(textstats_hpp)
+                    test_url_cpp = magic_url + "test.cpp"
+                    test_cpp = urllib.request.urlopen(test_url_cpp).read().decode()
+                    with open("test.cpp",mode="w") as file:
+                        file.write(test_cpp)
+                    if test_number<10:
+                        test_url1 = magic_url + "0" + str(test_number)
+                        answer_url = test_url1 + ".a"
+                    else:
+                        test_url1 = magic_url + str(test_number)
+                        answer_url = test_url1 + ".a"
+                elif program=="spellchecker":
+                    count_big_url = magic_url + "count_big.txt"
+                    count_big = urllib.request.urlopen(count_big_url).read().decode()
+                    with open("count_big.txt",mode="w") as file:
+                        file.write(count_big)
+                    test_url1 = magic_url + str(test_number)
+                    answer_url = test_url1 + ".a"
+                elif program=="supercalc":
+                    test_url_cpp = magic_url + str(test_number) +".test.cpp"
+                    test_cpp = urllib.request.urlopen(test_url_cpp).read().decode()
+                    with open("test.cpp",mode="w") as file:
+                        file.write(test_cpp)
+                    test_url1 = magic_url + str(test_number)
+                    answer_url = test_url1 + ".a"
             elif file_flag==True and language_choose.get()==2:
                 if (test_string[5].find("++")!=-1 and program!="SparseSet") or test_number!=1:
                     if test_string[5].find("+++")!=-1:
@@ -143,6 +175,8 @@ def test_program(event):
             test_file = open("test.txt", "w")
         elif language_choose.get()==0:
             test_file = open("test.c", "w")
+        elif language_choose.get()==1:
+            test_file = open("test.txt", "w")
         elif language_choose.get()==2 and test_string[5].find("+++")!=-1:
             test_file = open("Test" + str(test_number) + ".java", "w")
         elif language_choose.get()==2 and test_string[5].find("++")!=-1 and (test_number!=1 or program=="SkipList"):
@@ -166,14 +200,32 @@ def test_program(event):
                 command = language_string.get() + "test.c && valgrind -q ./a.out"
         elif language_choose.get()==0 and args_flag == True:
             command = "valgrind -q ./a.out " + test
+        elif language_choose.get()==1 and file_flag == True:
+            os.system("cp " + file_path.get() + " " + file_path.get()[file_path.get().rfind("/")+1:])
+            if program=="textstats":
+                command = "g++ textstats.hpp textstats.cpp test.cpp -std=c++11 && valgrind -q ./a.out <test.txt"
+            elif program=="spellchecker":
+                command = "g++ spellchecker.cpp -std=c++11 && ./a.out <test.txt"
+            elif program=="supercalc":
+                command = "g++ supercalc.hpp test.cpp -std=c++11 && valgrind -q ./a.out <test.txt"
         elif language_choose.get()==0 or language_choose.get()==1:
             command = "valgrind -q ./a.out <test.txt"
         elif language_choose.get()==2 and args_flag == True:
             os.system("cd " + os.getcwd())
             command = "java -cp " + os.getcwd() + " " + file_path.get()[file_path.get().rfind("/")+1:file_path.get().rfind(".")] + " " + test
             files=test.split(" ")
-            #urllib.urlretrieve(magic_url + str(test_number) +"." + files[0] + "zip",files[0] + ".zip")
-            #urllib.retrieve(magic_url + str(test_number) +"." + files[1] + "zip",files[1] + ".zip")
+            files[0]=files[0].replace(".","_")
+            files[1]=files[1].replace(".","_")
+            files[1]=files[1].replace("\n","")
+            if (os.path.exists(os.getcwd() + "/"+ files[0])) and (os.path.exists(os.getcwd() + "/"+ files[1])):
+                shutil.rmtree(os.getcwd() + "/"+ files[0])
+                shutil.rmtree(os.getcwd() + "/"+ files[1])
+            urllib.request.urlretrieve(magic_url + str(test_number) +"." + files[0] + ".zip","1.zip")
+            urllib.request.urlretrieve(magic_url + str(test_number) +"." + files[1] + ".zip","2.zip")
+            zip1 = zipfile.ZipFile("1.zip")
+            zip1.extractall(os.getcwd())
+            zip2 = zipfile.ZipFile("2.zip")
+            zip2.extractall(os.getcwd())
         elif language_choose.get()==2 and file_flag == True:
             if test_string[5].find("++")!=-1:
                 if program=="SparseSet":
@@ -205,12 +257,12 @@ def test_program(event):
             break
         try:
             process = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
-            output, error = process.communicate(timeout=10)
+            output, error = process.communicate(timeout=15)
             output = output.decode()
-            print(output)
+        #    print(output)
             error = error.decode()
         except:
-            messagebox.showerror("Test", "Превышен лимит по времени:\nограничение -- 10 с\n в тесте №" + str(test_number))
+            messagebox.showerror("Test", "Превышен лимит по времени:\nограничение -- 15 с\n в тесте №" + str(test_number))
             break
         if error != "" and (language_choose.get()==0 or language_choose.get()==1):
             messagebox.showerror("Test", "valgrind показывает ошибки в тесте " + str(test_number))
