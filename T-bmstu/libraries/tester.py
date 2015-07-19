@@ -12,7 +12,68 @@ import zipfile
 import shutil
 
 def compare_files(answer,output):
-    command="diff -wbq " + answer + " " + output
+    checking = checking_listbox.get(first=tkinter.ACTIVE)
+    command=""
+    if checking == "BINARY":
+        command="cmp " + answer + " " + output
+    elif checking == "TEXT":
+        command="diff --text -q" + answer + " " + output
+    elif checking == "SCAN":
+        command="diff -wbq " + answer + " " + output
+    elif checking == "INTEGER":
+        command="diff -wbq " + answer + " " + output
+        with open(answer) as fp:
+            text = fp.read()
+            text = text.replace("\n","")
+            text = text.replace("\t","")
+            text = text.replace("\r","")
+            text = text.replace(" ","")
+            try:
+                number_answer = int(text,base=36)
+            except:
+                messagebox.showinfo("Error in checking", "Запрещено использовать эту стратегию проверки.\nЗамените на другую")
+                return False
+        with open(output) as fp:
+            text = fp.read()
+            text = text.replace("\n","")
+            text = text.replace("\t","")
+            text = text.replace("\r","")
+            text = text.replace(" ","")
+            try:
+                number_output = int(text,base=36)
+            except:
+                messagebox.showinfo("Error in checking", "Запрещено использовать эту стратегию проверки.\nЗамените на другую")
+                return False
+        if number_answer != number_output:
+            return False
+    elif checking == "FLOAT":
+        command="diff -wbq " + answer + " " + output
+        with open(answer) as fp:
+            text = fp.read()
+            text = text.replace("\n","")
+            text = text.replace("\t","")
+            text = text.replace("\r","")
+            text = text.replace(" ","")
+            try:
+                number_answer = float(text)
+            except:
+                messagebox.showinfo("Error in checking", "Запрещено использовать эту стратегию проверки.\nЗамените на другую")
+                return False
+        with open(output) as fp:
+            text = fp.read()
+            text = text.replace("\n","")
+            text = text.replace("\t","")
+            text = text.replace("\r","")
+            text = text.replace(" ","")
+            try:
+                number_output = float(text)
+            except:
+                messagebox.showinfo("Error in checking", "Запрещено использовать эту стратегию проверки.\nЗамените на другую")
+                return False
+        number_dec=len(str(number_answer-int(number_answer)).split('.')[1])
+        number_output=round(number_output,number_dec)
+        if number_answer != number_output:
+            return False
     process = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
     output, error = process.communicate()
     output = output.decode()
@@ -34,10 +95,14 @@ def error_and_right(answer,output):
             print(line,end="")
     return None
 
-def test_program(event):
+def test_program():
     global test_url
     global args_flag
     global file_flag
+    global compile_flag
+    if compile_flag==False:
+        messagebox.showinfo("Error", "Проведите компиляцию вашего кода!")
+        return None
     if test_url.get()!="":
         magic_url=test_url.get()
     else:
@@ -194,8 +259,9 @@ def test_program(event):
         test_file.close()
         answer_file.close()
         if language_choose.get()==0 and file_flag == True:
+            os.system("cp " + file_path.get() + " " + file_path.get()[file_path.get().rfind("/")+1:])
             if elem_h:
-                command = language_string.get() + "test.c elem.h && valgrind -q ./a.out"
+                command = "gcc " + file_path.get()[file_path.get().rfind("/")+1:] + " test.c elem.h && valgrind -q ./a.out"
             else:
                 command = language_string.get() + "test.c && valgrind -q ./a.out"
         elif language_choose.get()==0 and args_flag == True:
@@ -257,19 +323,22 @@ def test_program(event):
             break
         try:
             process = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
-            output, error = process.communicate(timeout=15)
+            output, error = process.communicate(timeout=int(timeout_.get()))
             output = output.decode()
         #    print(output)
             error = error.decode()
         except:
-            messagebox.showerror("Test", "Превышен лимит по времени:\nограничение -- 15 с\n в тесте №" + str(test_number))
+            messagebox.showerror("Test", "Превышен лимит по времени:\nограничение -- " + str(int(timeout_.get())) + " с\n в тесте №" + str(test_number))
+            compile_flag=False
             break
         if error != "" and (language_choose.get()==0 or language_choose.get()==1):
             messagebox.showerror("Test", "valgrind показывает ошибки в тесте " + str(test_number))
+            compile_flag=False
             print(error)
             break
         elif error != "" and error.find("-Xlint:unchecked")==-1:
             messagebox.showerror("Test", "Неизвестная ошибка в тесте " + str(test_number))
+            compile_flag=False
             print(error)
             break
         output_file = open("output.txt", "w")
@@ -280,11 +349,12 @@ def test_program(event):
         output_file.close()
         if compare_files("answer.txt","output.txt") == False:
             messagebox.showerror("Test", "Неправильный ответ для теста № " + str(test_number))
+            compile_flag=False
             error_and_right("answer.txt","output.txt")
             break
         test_number +=1
 
-def compile_program(event):
+def compile_program():
     global file_flag
     global args_flag
     magic_lines = urllib.request.urlopen(test_url_const).read().decode().splitlines()
@@ -321,8 +391,10 @@ def compile_program(event):
     error = error.decode()
     if error == "":
         messagebox.showinfo("Compile", "Компиляция прошла удачно!")
+        compile_flag=True
     else:
         messagebox.showerror("Compile", "Компиляция не была проведена. Возникла ошибка")
+        compile_flag=False
         print(error)
 
 def choose_directory():
@@ -358,14 +430,21 @@ def compile_string_2():
     elif language_choose.get()==6:
         messagebox.showinfo("Choose language", "Временно недоступно")
 
+def timeout_change():
+    changing=("ограничение -- " + str(int(timeout_.get())) + " c")
+    timeout_label2.config(text=changing)
+    return None
 
+def donothing():
+    return None
 
 # Example #
 test_url_const = "https://raw.githubusercontent.com/runnerpeople/Summer_work/master/T-bmstu/tests.txt"
 
 wnd = tkinter.Tk()
-wnd.geometry("625x250")
+wnd.geometry("625x285")
 wnd.title("T-bmstu tester")
+wnd.resizable(width=tkinter.FALSE, height=tkinter.FALSE)
 frame1=tkinter.Frame(wnd)
 frame1.pack(fill="both",expand="Yes")
 language_list=[("C",0),("C++",1),("Java",2),("Python",3),("Scheme",4),("Ruby",5),("Pascal",6)]
@@ -373,9 +452,10 @@ language_list=[("C",0),("C++",1),("Java",2),("Python",3),("Scheme",4),("Ruby",5)
 # Boolean Flag
 args_flag = False
 file_flag = False
+compile_flag = False
 
 
-# String, int vars and Initialize #
+# String, int, double vars and Initialize #
 t_bmstu_ip=tkinter.StringVar()
 t_bmstu_ip.set("http://195.19.40.181:3386")
 file_path=tkinter.StringVar()
@@ -384,6 +464,39 @@ test_url=tkinter.StringVar()
 language_string = tkinter.StringVar()
 language_string.set("gcc " + str(os.getcwd()) + " ")
 language_choose=tkinter.IntVar()
+timeout_ = tkinter.DoubleVar()
+checking = tkinter.StringVar()
+
+# Menu #
+
+menubar = tkinter.Menu(frame1,relief=tkinter.FLAT)
+filemenu = tkinter.Menu(menubar,tearoff=0)
+filemenu.add_command(label="Open...", command=choose_directory)
+filemenu.add_separator()
+filemenu.add_command(label="Compile", command=compile_program)
+filemenu.add_command(label="Test", command=test_program)
+filemenu.add_separator()
+filemenu.add_command(label="Exit", command=wnd.quit)
+menubar.add_cascade(label="File", menu=filemenu)
+editmenu = tkinter.Menu(menubar, tearoff=0)
+editmenu.add_command(label="T-bmstu", command=t_bmstu_window)
+editmenu.add_command(label="Test_url", command=donothing)
+editmenu.add_separator()
+editmenu.add_command(label="Bash_compile", command=donothing)
+editmenu.add_command(label="Choose_language", command=donothing)
+editmenu.add_separator()
+editmenu.add_command(label="Timeout", command=donothing)
+editmenu.add_command(label="Checking strategy", command=donothing)
+menubar.add_cascade(label="Edit", menu=editmenu)
+offlinemenu = tkinter.Menu(menubar, tearoff=0)
+offlinemenu.add_command(label="Tasks", command=donothing)
+menubar.add_cascade(label="Offline", menu=offlinemenu)
+helpmenu = tkinter.Menu(menubar, tearoff=0)
+helpmenu.add_command(label="Help Index", command=donothing)
+helpmenu.add_command(label="Contact us", command=donothing)
+helpmenu.add_command(label="About...", command=donothing)
+menubar.add_cascade(label="Help", menu=helpmenu)
+
 
 # Labels #
 info_label=tkinter.Label(frame1,text="Автоматический тестер решения задач в системе тестирования T-bmstu")
@@ -392,6 +505,9 @@ language_label=tkinter.Label(frame1,text="Выберите один из язы�
 file_label=tkinter.Label(frame1,text="Укажите путь к файлу")
 test_url_label=tkinter.Label(frame1,text="Введите ссылку на тесты\n (если возникнет неизвестная ошибка)")
 compile_label = tkinter.Label(frame1,text="Строка компиляции для bash")
+timeout_label = tkinter.Label(frame1,text="Укажите предел по времени")
+timeout_label2 = tkinter.Label(frame1,text="ограничение -- 1 с")
+checking_label = tkinter.Label(frame1,text="Укажите способ проверки")
 author_name=tkinter.Label(frame1,text="by George Great")
 
 # Entries #
@@ -404,13 +520,31 @@ test_url_entry=tkinter.Entry(frame1,textvariable=test_url,width=40)
 
 compile_button=tkinter.Button(frame1,text="Compile")
 file_button=tkinter.Button(frame1,text="Выбери директорию",command=choose_directory)
-compile_button.bind("<Button-1>",compile_program)
+compile_button.bind("<Button-1>",lambda event:compile_program())
 test_button=tkinter.Button(frame1,text="Test!")
-test_button.bind("<Button-1>",test_program)
+test_button.bind("<Button-1>",lambda event:test_program())
 buttons=create_choose_language(language_list,language_choose)
 
+# Scrollbar #
+
+scrollbar = tkinter.Scrollbar(frame1)
+
+# ListBox #
+
+checking_listbox = tkinter.Listbox(frame1,yscrollcommand=scrollbar.set,height=1,selectmode=tkinter.SINGLE)
+checking_listbox.insert(tkinter.END, "SCAN")
+checking_listbox.insert(tkinter.END, "BINARY")
+checking_listbox.insert(tkinter.END, "TEXT")
+checking_listbox.insert(tkinter.END, "INTEGER")
+checking_listbox.insert(tkinter.END, "FLOAT")
+
+# Scale #
+
+timeout_scale = tkinter.Scale(frame1,variable=timeout_,from_=1,to=20,orient=tkinter.HORIZONTAL,showvalue=0,command=lambda event:timeout_change())
 
 # Packing #
+wnd.config(menu=menubar)
+scrollbar.config(command=checking_listbox.yview)
 info_label.grid(row=1,column=1,columnspan=4)
 t_bmstu_label.grid(row=2,column=1)
 t_bmstu_entry.grid(row=2,column=2,columnspan=3)
@@ -433,8 +567,14 @@ test_url_label.grid(row=7,column=1)
 test_url_entry.grid(row=7,column=2,columnspan=3)
 compile_label.grid(row=8,column=1)
 compile_string.grid(row=8,column=2,columnspan=3)
-test_button.grid(row=9,column=2)
-compile_button.grid(row=9,column=3)
-author_name.grid(row=10,column=1,columnspan=4)
+timeout_label.grid(row=9,column=1)
+timeout_scale.grid(row=9,column=2)
+timeout_label2.grid(row=9,column=3,columnspan=2)
+checking_label.grid(row=10,column=1)
+checking_listbox.grid(row=10,column=2,columnspan=2)
+scrollbar.grid(row=10,column=4)
+test_button.grid(row=11,column=2)
+compile_button.grid(row=11,column=3)
+author_name.grid(row=12,column=1,columnspan=4)
 
 wnd.mainloop()
