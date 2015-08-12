@@ -28,7 +28,7 @@ Number;File_name;Language;Subject;Language_allow;Args_Mode;File_mode;
 26;quicksort;sort_search_parse;algorithms_and_data_structures.2;C;-;-;
 27;dsort;sort_search_parse;algorithms_and_data_structures;C;-;-;
 28;datesort;sort_search_parse;algorithms_and_data_structures;C;-;-;
-29;radisort;sort_search_parse;algorithms_and_data_structures.2;C;-;-;
+29;radixsort;sort_search_parse;algorithms_and_data_structures.2;C;-;-;
 30;prefixes;sort_search_parse;algorithms_and_data_structures;C;+;-;
 31;kmpall;sort_search_parse;algorithms_and_data_structures;C;+;-;
 32;pword;sort_search_parse;algorithms_and_data_structures;C;+;-;
