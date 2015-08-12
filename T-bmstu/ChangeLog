@@ -1,0 +1,96 @@
+Changes in version 1.3.1
+------------------------
+
+  * Add help_window for users
+
+Changes in version 1.3
+------------------------
+
+  * Add offline_window for condition of the task
+  * Use webbrowser module for viewing html file.
+  * Add askokcancel messagebox for not throwing an exception, when open local html file
+  
+Changes in version 1.2.2
+------------------------
+
+  * Update all window(adding labels)
+
+Changes in version 1.2.1
+------------------------
+
+  * Add ancillary window(Checking_window)
+  
+Changes in version 1.2
+------------------------
+
+  * Add ancillary window(T_bmstu ip, Test url, Compile string, Language choose, Timeout of the task)
+
+Changes in version 1.1
+------------------------
+
+  * Add checking_listbox and scrollbar for listbox for comparing files(answer and output)
+  * Add menubar on T-bmstu window
+  
+Changes in version 1.0
+------------------------
+
+  * Add timeout_scale for choosing seconds of timeout
+  * T-bmstu window isn't resizable
+  
+Changes in version 1.5 (beta)
+------------------------
+
+  * Compile and all files on server T-bmstu without setup)
+
+Changes in version 1.4.2 (beta)
+------------------------
+
+  * Compile and test all type of .scm with additional files,args
+
+Changes in version 1.4.1 (beta)
+------------------------
+
+  * Compile and test all type of .java with additional files,args
+
+Changes in version 1.4 (beta)
+------------------------
+
+  * Compare file using "diff -wbq" instead of "filecmp.cmp"
+  * Compile and test all type of .c with additional files,args
+  * Add kill_in_timeout
+  
+Changes in version 1.3 (beta)
+------------------------
+
+  * Compile and test .java without args, additional files
+  * Adding args_flag and file_flag for different types of the tasks
+  * Write right and error answer, if they are different
+  * Add timeout for task
+
+Changes in version 1.2.1 (beta)
+------------------------
+
+  * Compile and test .c without args, additional files
+  
+Changes in version 1.2 (beta)
+------------------------
+
+  * Update choose path to task for reason, if nothing to choose
+  * Add compile string for all languages 
+  * Use magic_table(tests.txt) for address calculation
+
+Changes in version 1.1 (beta)
+------------------------
+
+  * Add compile and test programm
+  * Changing os.system to subprocess.Popen to control stdout,stderr
+  * Using urllib.request to open tests for task
+
+Changes in version 1.0 (beta)
+------------------------
+
+  * Add tkinter.filedialog for choose path to task
+  * Add radiobutton for choosing language
+  * Change packing to grid for regularizing T-bmstu window
+  
+  
