@@ -2,8 +2,8 @@ Changes in version 1.4.1
 ------------------------
 
   * Add MenuBar(Table)
-  * Add correspondence table the name of compiling file and the name of task
-  * Add status correspondence code table
+  * Add correspondence table the name of compiling file and the name of task (tkinter.ttk.TreeView)
+  * Add status correspondence code table (tkinter.ttk.TreeView)
   
 Changes in version 1.4
 ------------------------
