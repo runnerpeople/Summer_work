@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
-import os
+import os,stat
 import tkinter
 from tkinter import messagebox
 import tkinter.font
@@ -12,6 +12,9 @@ import zipfile
 import shutil
 import webbrowser
 import smtplib
+import tkinter.ttk
+import time
+from email.mime.text import MIMEText
 
 def compare_files(answer,output):
     checking = checking_listbox.get(checking_listbox.curselection())
@@ -102,9 +105,9 @@ def test_program():
     global args_flag
     global file_flag
     global compile_flag
-    if compile_flag==False:
-        messagebox.showinfo("Error", "Проведите компиляцию вашего кода!")
-        return None
+   # if compile_flag==False:
+   #     messagebox.showinfo("Error", "Проведите компиляцию вашего кода!")
+    #    return None
     if test_url.get()!="":
         magic_url=test_url.get()
     else:
@@ -327,7 +330,6 @@ def test_program():
             process = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
             output, error = process.communicate(timeout=int(timeout_.get()))
             output = output.decode()
-        #    print(output)
             error = error.decode()
         except:
             messagebox.showerror("Test", "Превышен лимит по времени:\nограничение -- " + str(int(timeout_.get())) + " с\n в тесте №" + str(test_number))
@@ -359,6 +361,7 @@ def test_program():
 def compile_program():
     global file_flag
     global args_flag
+    global statistic_list
     magic_lines = urllib.request.urlopen(test_url_const).read().decode().splitlines()
     program=file_path.get()[file_path.get().rfind("/")+1:]
     program=program[:program.find(".")]
@@ -368,8 +371,13 @@ def compile_program():
         test_string = s
     for s in filter (lambda x: program_low in x, magic_lines):
         test_string = s
-    if test_string == "":
+    if test_string == '':
         messagebox.showinfo("Error", "Возникла неизвестная ошибка\nУкажите правильное имя\n")
+        statistic=[len(statistic_list)+1,time.ctime(),program,"010","Имя файла " + program + " не соотвествует таблице \n"
+                                                                                             " соотвествий. Проверьте имя"
+                                                                                             " файла компиляции","-"]
+        statistic_list.append(statistic)
+        #print(statistic_list[0][4])
         return None
     test_string=test_string.split(";")[1:]
     file_flag = False
@@ -394,10 +402,16 @@ def compile_program():
     if error == "":
         messagebox.showinfo("Compile", "Компиляция прошла удачно!")
         compile_flag=True
+        statistic=[len(statistic_list)+1,time.ctime(),program,"008","Компиляция прошла успешно!","-"]
+        statistic_list.append(statistic)
+        print(statistic)
     else:
         messagebox.showerror("Compile", "Компиляция не была проведена. Возникла ошибка")
         compile_flag=False
+        statistic=[len(statistic_list)+1,time.ctime(),program,"009",error,"-"]
+        statistic_list.append(statistic)
         print(error)
+        print(statistic)
 
 def choose_directory():
     directory_path = tkinter.filedialog.askopenfilename(initialdir="/home/",title="Выберите файл для компиляции")
@@ -807,17 +821,18 @@ def contact_window():
         else:
             password_entry.config(show="*")
     def send_email():
-        message= "\r\n".join(["From: " + user_var.get(),"To: runnerpeople@gmail.com","Subject: Help",
-                              "",message_text.get(1.0,tkinter.END)])
+        message= MIMEText("\r\n".join(["From: " + user_var.get(),"To: gosha8352@gmail.com","Subject: Help",
+                              "",message_text.get(1.0,tkinter.END)]))
         try:
             server = smtplib.SMTP("smtp.gmail.com", 587)
             server.ehlo()
             server.starttls()
             server.login(user_var.get(), password_var.get())
-            server.sendmail(user_var.get(), "runnerpeople@gmail.com", message)
+            server.sendmail(user_var.get(), "gosha8352@gmail.com",message)
             server.close()
             messagebox.showinfo("Сообщение","Сообщение было отправлено!\nОжидайте ответа")
-        except:
+        except smtplib.SMTPException as error:
+            print(error.smtp_error)
             messagebox.showerror("Сообщение","Сообщение не было отправлено!\nОшибка внутренняя")
         return None
     new_window = tkinter.Toplevel()
@@ -851,6 +866,102 @@ def contact_window():
     quit_button.grid(row=6,column=2)
     return None
 
+def table_window():
+    new_window = tkinter.Toplevel()
+    new_window.geometry("630x420")
+    new_window.title("File task")
+    frame=tkinter.Frame(new_window)
+    style = tkinter.ttk.Style(new_window)
+    style.configure('Treeview', rowheight=20)
+    frame.pack(side=tkinter.TOP,fill=tkinter.BOTH,expand=tkinter.Y)
+    new_window_frame=tkinter.ttk.Frame(frame)
+    new_window_frame.pack(side=tkinter.TOP, fill=tkinter.BOTH,expand=tkinter.Y)
+    columns=("compile_name","task_name")
+    tree=tkinter.ttk.Treeview(new_window_frame,columns=columns,displaycolumns="task_name")
+    ysb=tkinter.ttk.Scrollbar(new_window_frame,orient=tkinter.VERTICAL,command=tree.yview)
+    xsb=tkinter.ttk.Scrollbar(new_window_frame,orient=tkinter.HORIZONTAL,command=tree.xview)
+    tree['yscroll']=ysb.set
+    tree['xscroll']=xsb.set
+    tree.column("#0", width=200,stretch=tkinter.NO)
+    tree.column("task_name", width=420,stretch=tkinter.NO)
+    tree.heading("#0",text="Имя файла для компиляции",anchor=tkinter.W)
+    tree.heading("task_name",text="Название задачи",anchor=tkinter.W)
+    tree.grid(row=0,column=0,sticky="NSEW")
+    ysb.grid(row=0, column=1, sticky="NS")
+    xsb.grid(row=1, column=0, sticky="EW")
+    new_window_frame.rowconfigure(0, weight=1)
+    new_window_frame.columnconfigure(0, weight=1)
+    tasks_url=test_url_const.replace("tests","tasks")
+    tasks_name=urllib.request.urlopen(tasks_url).read().decode()
+    tasks_name=tasks_name.replace("###","").replace("\n","").replace("\'","").replace("\"","").split(";")
+    compile_name=[]
+    compile_names=urllib.request.urlopen(test_url_const).read().decode().splitlines()
+    compile_names=compile_names[2:]
+    separator=tkinter.Label(new_window,text="")
+    separator.pack()
+    for name in compile_names:
+        buffer=name.split(";")
+        extension=""
+        if buffer[4]=="C" or buffer[4]=="С":
+            extension=".c"
+        elif buffer[4]=="Scheme":
+            extension=".scm"
+        elif buffer[4]=="Java":
+            extension=".java"
+        elif buffer[4]=="Cpp":
+            extension=".cpp"
+        else:
+            extension=".*"
+        compile_name.append(buffer[1]+extension)
+    for i in range(len(compile_name)):
+        tree.insert("",tkinter.END,text=compile_name[i],values=("#0",tasks_name[i]))
+    return None
+
+def table_window2():
+    new_window = tkinter.Toplevel()
+    new_window.geometry("420x420")
+    new_window.title("Status code")
+    frame=tkinter.Frame(new_window)
+    style = tkinter.ttk.Style(new_window)
+    style.configure('Treeview', rowheight=20)
+    frame.pack(side=tkinter.TOP,fill=tkinter.BOTH,expand=tkinter.Y)
+    new_window_frame=tkinter.ttk.Frame(frame)
+    new_window_frame.pack(side=tkinter.TOP, fill=tkinter.BOTH,expand=tkinter.Y)
+    columns=("status_code","status_name")
+    tree=tkinter.ttk.Treeview(new_window_frame,columns=columns,displaycolumns="status_name")
+    ysb=tkinter.ttk.Scrollbar(new_window_frame,orient=tkinter.VERTICAL,command=tree.yview)
+    xsb=tkinter.ttk.Scrollbar(new_window_frame,orient=tkinter.HORIZONTAL,command=tree.xview)
+    tree['yscroll']=ysb.set
+    tree['xscroll']=xsb.set
+    tree.column("#0", width=100,stretch=tkinter.NO)
+    tree.column("status_name", width=325,stretch=tkinter.NO)
+    tree.heading("#0",text="Номер статуса",anchor=tkinter.W)
+    tree.heading("status_name",text="Объяснение",anchor=tkinter.W)
+    tree.grid(row=0,column=0,sticky="NSEW")
+    ysb.grid(row=0, column=1, sticky="NS")
+    xsb.grid(row=1, column=0, sticky="EW")
+    new_window_frame.rowconfigure(0, weight=1)
+    new_window_frame.columnconfigure(0, weight=1)
+    status_code_list=["{0:03d}".format(i) for i in range(11)]
+    status_name=["Все тесты пройдены","Неправильный ответ в тесте №#","Не установлена программа!(not found)","Segmentation fault!",
+                 "Ошибка valgrind","Утечка памяти","Превышен предел по времени","Неизвестная ошибка",
+                 "Успешная компиляция","Ошибки компиляции", "Имя файла не соотвествует таблице соответствий", " "]
+    for i in range(len(status_code_list)):
+        tree.insert("",tkinter.END,text=status_code_list[i],values=("#0",status_name[i]))
+    return None
+
+def table_window3():
+    global statistic_list
+    if os.path.exists(os.getcwd() + "/statistic.html") is False:
+        static_url = test_url_const.replace("tests.txt","statistic.html")
+        urllib.request.urlretrieve(static_url,"statistic.html")
+    os.chmod(os.getcwd() + "/statistic.html",stat.S_IREAD)
+    with open("statistic.html","a") as fp:
+        os.chmod(os.getcwd() + "/statistic.html",stat.S_IREAD)
+        fp.write("hello world")
+
+    return None
+
 # Magic_table #
 test_url_const = "https://raw.githubusercontent.com/runnerpeople/Summer_work/master/T-bmstu/tests.txt"
 
@@ -866,6 +977,7 @@ language_list=[("C",0),("C++",1),("Java",2),("Python",3),("Scheme",4),("Ruby",5)
 args_flag = False
 file_flag = False
 compile_flag = False
+statistic_list = []
 
 
 # String, int, double vars and Initialize #
@@ -904,6 +1016,11 @@ menubar.add_cascade(label="Edit", menu=editmenu)
 offlinemenu = tkinter.Menu(menubar, tearoff=0)
 offlinemenu.add_command(label="Tasks", command=tasks_window)
 menubar.add_cascade(label="Offline", menu=offlinemenu)
+tablemenu = tkinter.Menu(menubar,tearoff=0)
+tablemenu.add_command(label="File task",command=table_window)
+tablemenu.add_command(label="Status code",command=table_window2)
+tablemenu.add_command(label="Statistics",command=table_window3)
+menubar.add_cascade(label="Table",menu=tablemenu)
 helpmenu = tkinter.Menu(menubar, tearoff=0)
 helpmenu.add_command(label="Help Index", command=help_window)
 helpmenu.add_command(label="Contact us", command=contact_window)
@@ -952,7 +1069,7 @@ checking_listbox.bind('<<ListboxSelect>>',lambda event:checking_change())
 
 # Scale #
 
-timeout_scale = tkinter.Scale(frame1,variable=timeout_,from_=1,to=20,orient=tkinter.HORIZONTAL,showvalue=0,command=lambda event:timeout_change())
+timeout_scale = tkinter.Scale(frame1,variable=timeout_,from_=1,to=25,orient=tkinter.HORIZONTAL,showvalue=0,command=lambda event:timeout_change())
 
 # Packing #
 wnd.config(menu=menubar)
