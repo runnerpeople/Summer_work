@@ -3,7 +3,7 @@ Number;File_name;Language;Subject;Language_allow;Args_Mode;File_mode;
 1;polynom;clang;algorithms_and_data_structures.3;C;-;-;
 2;mulmod;clang;algorithms_and_data_structures.3;C;-;-;
 3;fibsys;clang;algorithms_and_data_structures.3;C;-;-;
-4;intersect;clang;algorithms_and_data_structures.3;C;-;-;
+4;intersect;clang;algorithms_and_data_structures.2;C;-;-;
 5;permut;clang;algorithms_and_data_structures.2;C;-;-;
 6;maxk;clang;algorithms_and_data_structures.3;C;-;-;
 7;primediv;sort_search_parse;algorithms_and_data_structures.2;C;-;-;
