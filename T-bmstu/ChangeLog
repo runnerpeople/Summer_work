@@ -4,7 +4,7 @@ Changes in version 1.5
   * Delete status correspondence code table (changing on file staticstic.html and using module webbrowser)
   * Adding russian support (unicode message)
   * Remove files (answer,additional,output,test) after testing task
-  * An other strategy to find tests on server (we know all test on server)
+  * An other strategy to find tests on server
   * Add tkinter.ttk.progressbar for testing and compiling the task
 
 Changes in version 1.4.1
