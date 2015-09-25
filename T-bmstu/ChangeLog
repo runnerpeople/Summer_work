@@ -5,7 +5,7 @@ Changes in version 1.5
   * Adding russian support (unicode message)
   * Remove files (answer,additional,output,test) after testing task
   * An other strategy to find tests on server
-  * Add tkinter.ttk.progressbar for testing and compiling the task
+  * Add tkinter.ttk.progressbar for testing the task
 
 Changes in version 1.4.1
 ------------------------
