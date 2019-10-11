@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Сервер тестирования</title>
+
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/uikit.min.css') }}" />
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/uikit-rtl.min.css') }}" />
+        <script src="{{ url_for('static', filename='js/uikit.min.js') }}" ></script>
+        <script src="{{ url_for('static', filename='js/uikit-icons.min.js') }}" ></script>
+    </head>
+    <body>
+    <div class="uk-section uk-section-muted uk-flex uk-flex-middle uk-animation-fade" uk-height-viewport>
+	<div class="uk-width-1-1">
+		<div class="uk-container">
+			<div class="uk-grid-margin uk-grid uk-grid-stack" uk-grid>
+				<div class="uk-width-1-1@m">
+					<div class="uk-margin uk-width-large uk-margin-auto uk-card uk-card-default uk-card-body uk-box-shadow-large">
+						<h3 class="uk-card-title uk-text-center">Авторизация</h3>
+						<form id="signup" action="{{ url_for('login')}}" method="post">
+							<div class="uk-margin">
+								<div class="uk-inline uk-width-1-1">
+									<input class="uk-input uk-form-large" type="text" placeholder="Фамилия" id="surname" name="surname">
+								</div>
+							</div>
+                            <div class="uk-margin">
+								<div class="uk-inline uk-width-1-1">
+									<input class="uk-input uk-form-large" type="text" placeholder="Имя" id="name" name="name">
+								</div>
+							</div>
+                            <div class="uk-margin">
+                                <select class="uk-select uk-width-1-1" name="group">
+                                  <option disabled>Выберите группу</option>
+                                  <option value="ИУ9-11">ИУ9-11Б</option>
+                                  <option value="ИУ9-12">ИУ9-12Б</option>
+                                </select>
+							</div>
+							<div class="uk-margin">
+								<button type="submit" class="uk-button uk-button-primary uk-button-large uk-width-1-1">Войти</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+    </div>
+    </body>
+</html>
